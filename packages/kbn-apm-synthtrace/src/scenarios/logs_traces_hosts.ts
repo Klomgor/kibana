@@ -52,6 +52,9 @@ const scenario: Scenario<LogDocument | InfraDocument | ApmFields> = async (runOp
     bootstrap: async ({ logsEsClient }) => {
       if (isLogsDb) await logsEsClient.createIndexTemplate(IndexTemplateName.LogsDb);
     },
+    teardown: async ({ logsEsClient }) => {
+      if (isLogsDb) await logsEsClient.deleteIndexTemplate(IndexTemplateName.LogsDb);
+    },
     generate: ({ range, clients: { logsEsClient, infraEsClient, apmEsClient } }) => {
       const {
         numSpaces,
