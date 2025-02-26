@@ -5054,7 +5054,14 @@ paths:
               properties:
                 records:
                   items:
-                    $ref: '#/components/schemas/Security_Entity_Analytics_API_CreateAssetCriticalityRecord'
+                    allOf:
+                      - $ref: '#/components/schemas/Security_Entity_Analytics_API_AssetCriticalityRecordIdParts'
+                      - type: object
+                        properties:
+                          criticality_level:
+                            $ref: '#/components/schemas/Security_Entity_Analytics_API_AssetCriticalityLevelsForBulkUpload'
+                        required:
+                          - criticality_level
                   maxItems: 1000
                   minItems: 1
                   type: array
@@ -8011,6 +8018,42 @@ paths:
         '200':
           content:
             application/json:
+              examples:
+                success:
+                  value:
+                    application: {}
+                    cluster:
+                      all: true
+                      manage: true
+                      manage_api_key: true
+                      manage_index_templates: true
+                      manage_ml: true
+                      manage_own_api_key: true
+                      manage_pipeline: true
+                      manage_security: true
+                      manage_transform: true
+                      monitor: true
+                      monitor_ml: true
+                      monitor_transform: true
+                    has_all_requested: true
+                    has_encryption_key: true
+                    index:
+                      .alerts-security.alerts-default:
+                        all: true
+                        create: true
+                        create_doc: true
+                        create_index: true
+                        delete: true
+                        delete_index: true
+                        index: true
+                        maintenance: true
+                        manage: true
+                        monitor: true
+                        read: true
+                        view_index_metadata: true
+                        write: true
+                    is_authenticated: true
+                    username: elastic
               schema:
                 type: object
                 properties:
@@ -8682,6 +8725,23 @@ paths:
       requestBody:
         content:
           application/json:
+            examples:
+              add:
+                value:
+                  assignees:
+                    add:
+                      - u_MxY0jbrft7EcfC6iNZSUGeI_n6iYrSwZj5mWF5EqmSU_0
+                    remove: []
+                  ids:
+                    - 681c2a707335aa7df5f349b70013d87254746191712ecf0ced9b3e2d538503a6
+              remove:
+                value:
+                  assignees:
+                    add: []
+                    remove:
+                      - u_MxY0jbrft7EcfC6iNZSUGeI_n6iYrSwZj5mWF5EqmSU_0
+                  ids:
+                    - 681c2a707335aa7df5f349b70013d87254746191712ecf0ced9b3e2d538503a6
             schema:
               type: object
               properties:
@@ -8690,13 +8750,32 @@ paths:
                   description: Details about the assignees to assign and unassign.
                 ids:
                   $ref: '#/components/schemas/Security_Detections_API_AlertIds'
-                  description: List of alerts ids to assign and unassign passed assignees.
               required:
                 - assignees
                 - ids
         required: true
       responses:
         '200':
+          content:
+            application/ndjson:
+              examples:
+                add:
+                  value:
+                    batches: 1,
+                    deleted: 0,
+                    failures: []
+                    noops: 0,
+                    requests_per_second: '-1,'
+                    retries:
+                      - bulk: 0,
+                      - search: 0
+                    throttled_millis: 0,
+                    throttled_until_millis: 0,
+                    timed_out: false,
+                    took: 76,
+                    total: 1,
+                    updated: 1,
+                    version_conflicts: 0,
           description: Indicates a successful call.
         '400':
           description: Invalid request.
@@ -8711,6 +8790,35 @@ paths:
       requestBody:
         content:
           application/json:
+            examples:
+              query:
+                value:
+                  aggs:
+                    alertsByGrouping:
+                      terms:
+                        field: host.name
+                        size: 10
+                    missingFields:
+                      missing:
+                        field: host.name
+                  query:
+                    bool:
+                      filter:
+                        - bool:
+                            filter:
+                              - match_phrase:
+                                  kibana.alert.workflow_status: open
+                            must: []
+                            must_not:
+                              - exists:
+                                  field: kibana.alert.building_block_type
+                            should: []
+                        - range:
+                            '@timestamp':
+                              gte: '2025-01-17T08:00:00.000Z'
+                              lte: '2025-01-18T07:59:59.999Z'
+                  runtime_mappings: {}
+                  size: 0
             schema:
               description: Elasticsearch query and aggregation request
               type: object
@@ -8748,6 +8856,31 @@ paths:
         '200':
           content:
             application/json:
+              examples:
+                success:
+                  value:
+                    _shards:
+                      failed: 0
+                      skipped: 0
+                      successful: 1
+                      total: 1
+                    aggregations:
+                      alertsByGrouping:
+                        buckets:
+                          - doc_count: 5
+                            key: Host-f43kkddfyc
+                        doc_count_error_upper_bound: 0
+                        sum_other_doc_count: 0
+                      missingFields:
+                        doc_count: 0
+                    hits:
+                      hits: []
+                      max_score: null
+                      total:
+                        relation: eq
+                        value: 5
+                    timed_out: false
+                    took: 0
               schema:
                 additionalProperties: true
                 description: Elasticsearch search response
@@ -8784,6 +8917,43 @@ paths:
       requestBody:
         content:
           application/json:
+            examples:
+              byId:
+                value:
+                  signal_ids:
+                    - 80e1383f856e67c1b7f7a1634744fa6d66b6e2ef7aa26d226e57afb5a7b2b4a1
+                  status: closed
+              byQuery:
+                value:
+                  conflicts: proceed
+                  query:
+                    bool:
+                      filter:
+                        - '@timestamp':
+                            format: strict_date_optional_time
+                            gte: '2024-10-23T07:00:00.000Z'
+                            lte: '2025-01-21T20:12:11.704Z'
+                          range: null
+                        - bool:
+                            filter:
+                              bool:
+                                filter:
+                                  - match_phrase:
+                                      kibana.alert.workflow_status: open
+                                  - '@timestamp':
+                                      format: strict_date_optional_time
+                                      gte: '2024-10-23T07:00:00.000Z'
+                                      lte: '2025-01-21T20:12:11.704Z'
+                                    range: null
+                                must: []
+                                must_not:
+                                  - exists:
+                                      field: kibana.alert.building_block_type
+                                should: []
+                      must: []
+                      must_not: []
+                      should: []
+                  status: closed
             schema:
               oneOf:
                 - $ref: '#/components/schemas/Security_Detections_API_SetAlertsStatusByIds'
@@ -8794,6 +8964,41 @@ paths:
         '200':
           content:
             application/json:
+              examples:
+                byId:
+                  value:
+                    batches: 1
+                    deleted: 0
+                    failures: []
+                    noops: 0
+                    requests_per_second: -1
+                    retries:
+                      bulk: 0
+                      search: 0
+                    throttled_millis: 0
+                    throttled_until_millis: 0
+                    timed_out: false
+                    took: 81
+                    total: 1
+                    updated: 1
+                    version_conflicts: 0
+                byQuery:
+                  value:
+                    batches: 1
+                    deleted: 0
+                    failures: []
+                    noops: 0
+                    requests_per_second: -1
+                    retries:
+                      bulk: 0
+                      search: 0
+                    throttled_millis: 0
+                    throttled_until_millis: 0
+                    timed_out: false
+                    took: 100
+                    total: 17
+                    updated: 17
+                    version_conflicts: 0
               schema:
                 additionalProperties: true
                 description: Elasticsearch update by query response
@@ -8833,6 +9038,23 @@ paths:
       requestBody:
         content:
           application/json:
+            examples:
+              add:
+                value:
+                  ids:
+                    - 549c7129c76cbd554aba1bd638f8a49dde95088f5832e50218358e7eca1cf16e
+                  tags:
+                    tags_to_add:
+                      - Duplicate
+                    tags_to_remove: []
+              remove:
+                value:
+                  ids:
+                    - 549c7129c76cbd554aba1bd638f8a49dde95088f5832e50218358e7eca1cf16e
+                  tags:
+                    tags_to_add: []
+                    tags_to_remove:
+                      - Duplicate
             schema:
               type: object
               properties:
@@ -8849,6 +9071,24 @@ paths:
         '200':
           content:
             application/json:
+              examples:
+                success:
+                  value:
+                    batches: 1,
+                    deleted: 0,
+                    failures: []
+                    noops: 0,
+                    requests_per_second: '-1,'
+                    retries:
+                      bulk: 0,
+                      search: 0
+                    throttled_millis: 0,
+                    throttled_until_millis: 0,
+                    timed_out: false,
+                    took: 68,
+                    total: 1,
+                    updated: 1,
+                    version_conflicts: 0,
               schema:
                 additionalProperties: true
                 description: Elasticsearch update by query response
@@ -9674,16 +9914,41 @@ paths:
       operationId: GetEndpointMetadataList
       parameters:
         - in: query
-          name: query
+          name: page
+          required: false
+          schema:
+            $ref: '#/components/schemas/Security_Endpoint_Management_API_Page'
+        - in: query
+          name: pageSize
+          required: false
+          schema:
+            $ref: '#/components/schemas/Security_Endpoint_Management_API_PageSize'
+        - in: query
+          name: kuery
+          required: false
+          schema:
+            $ref: '#/components/schemas/Security_Endpoint_Management_API_Kuery'
+        - in: query
+          name: hostStatuses
           required: true
           schema:
-            $ref: '#/components/schemas/Security_Endpoint_Management_API_ListRequestQuery'
+            $ref: '#/components/schemas/Security_Endpoint_Management_API_HostStatuses'
+        - in: query
+          name: sortField
+          required: false
+          schema:
+            $ref: '#/components/schemas/Security_Endpoint_Management_API_SortField'
+        - in: query
+          name: sortDirection
+          required: false
+          schema:
+            $ref: '#/components/schemas/Security_Endpoint_Management_API_SortDirection'
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Security_Endpoint_Management_API_SuccessResponse'
+                $ref: '#/components/schemas/Security_Endpoint_Management_API_MetadataListResponse'
           description: OK
       summary: Get a metadata list
       tags:
@@ -9697,13 +9962,14 @@ paths:
           name: id
           required: true
           schema:
+            example: ed518850-681a-4d60-bb98-e22640cae2a8
             type: string
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Security_Endpoint_Management_API_SuccessResponse'
+                $ref: '#/components/schemas/Security_Endpoint_Management_API_EndpointMetadataResponse'
           description: OK
       summary: Get metadata
       tags:
@@ -12593,6 +12859,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -12601,6 +12868,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get agent binary download sources
       tags:
         - Elastic Agent binary download sources
@@ -12680,6 +12948,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -12688,6 +12957,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Create an agent binary download source
       tags:
         - Elastic Agent binary download sources
@@ -12729,6 +12999,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -12737,6 +13008,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Delete an agent binary download source
       tags:
         - Elastic Agent binary download sources
@@ -12790,6 +13062,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -12798,6 +13071,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get an agent binary download source
       tags:
         - Elastic Agent binary download sources
@@ -12882,6 +13156,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -12890,6 +13165,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Update an agent binary download source
       tags:
         - Elastic Agent binary download sources
@@ -13151,6 +13427,12 @@ paths:
                                 additionalProperties: false
                                 type: object
                                 properties:
+                                  additional_datastreams_permissions:
+                                    description: Additional datastream permissions, that will be added to the agent policy.
+                                    items:
+                                      type: string
+                                    nullable: true
+                                    type: array
                                   agents:
                                     type: number
                                   created_at:
@@ -13600,6 +13882,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -13608,6 +13891,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get agent policies
       tags:
         - Elastic Agent policies
@@ -14025,6 +14309,12 @@ paths:
                               additionalProperties: false
                               type: object
                               properties:
+                                additional_datastreams_permissions:
+                                  description: Additional datastream permissions, that will be added to the agent policy.
+                                  items:
+                                    type: string
+                                  nullable: true
+                                  type: array
                                 agents:
                                   type: number
                                 created_at:
@@ -14464,6 +14754,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -14472,6 +14763,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Create an agent policy
       tags:
         - Elastic Agent policies
@@ -14707,6 +14999,12 @@ paths:
                                 additionalProperties: false
                                 type: object
                                 properties:
+                                  additional_datastreams_permissions:
+                                    description: Additional datastream permissions, that will be added to the agent policy.
+                                    items:
+                                      type: string
+                                    nullable: true
+                                    type: array
                                   agents:
                                     type: number
                                   created_at:
@@ -15147,6 +15445,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -15155,6 +15454,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Bulk get agent policies
       tags:
         - Elastic Agent policies
@@ -15368,6 +15668,12 @@ paths:
                               additionalProperties: false
                               type: object
                               properties:
+                                additional_datastreams_permissions:
+                                  description: Additional datastream permissions, that will be added to the agent policy.
+                                  items:
+                                    type: string
+                                  nullable: true
+                                  type: array
                                 agents:
                                   type: number
                                 created_at:
@@ -15807,6 +16113,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -15815,6 +16122,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get an agent policy
       tags:
         - Elastic Agent policies
@@ -15901,6 +16209,8 @@ paths:
                               type: string
                             memory:
                               type: string
+                bumpRevision:
+                  type: boolean
                 data_output_id:
                   nullable: true
                   type: string
@@ -16240,6 +16550,12 @@ paths:
                               additionalProperties: false
                               type: object
                               properties:
+                                additional_datastreams_permissions:
+                                  description: Additional datastream permissions, that will be added to the agent policy.
+                                  items:
+                                    type: string
+                                  nullable: true
+                                  type: array
                                 agents:
                                   type: number
                                 created_at:
@@ -16679,6 +16995,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -16687,6 +17004,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Update an agent policy
       tags:
         - Elastic Agent policies
@@ -16921,6 +17239,12 @@ paths:
                               additionalProperties: false
                               type: object
                               properties:
+                                additional_datastreams_permissions:
+                                  description: Additional datastream permissions, that will be added to the agent policy.
+                                  items:
+                                    type: string
+                                  nullable: true
+                                  type: array
                                 agents:
                                   type: number
                                 created_at:
@@ -17360,6 +17684,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -17368,6 +17693,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Copy an agent policy
       tags:
         - Elastic Agent policies
@@ -17411,6 +17737,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -17419,6 +17746,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
         '404':
           content:
             application/json:
@@ -17427,6 +17755,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -17435,6 +17764,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Download an agent policy
       tags:
         - Elastic Agent policies
@@ -17577,6 +17907,22 @@ paths:
                                   proxy_headers: {}
                                   proxy_url:
                                     type: string
+                                  secrets:
+                                    additionalProperties: false
+                                    type: object
+                                    properties:
+                                      ssl:
+                                        additionalProperties: false
+                                        type: object
+                                        properties:
+                                          key:
+                                            additionalProperties: false
+                                            type: object
+                                            properties:
+                                              id:
+                                                type: string
+                                        required:
+                                          - key
                                   ssl:
                                     additionalProperties: false
                                     type: object
@@ -17778,6 +18124,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -17786,6 +18133,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get a full agent policy
       tags:
         - Elastic Agent policies
@@ -17875,6 +18223,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -17883,6 +18232,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get outputs for an agent policy
       tags:
         - Elastic Agent policies
@@ -17936,6 +18286,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -17944,6 +18295,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Delete an agent policy
       tags:
         - Elastic Agent policies
@@ -18051,6 +18403,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -18059,6 +18412,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get outputs for agent policies
       tags:
         - Elastic Agent policies
@@ -18143,6 +18497,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -18151,6 +18506,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get an agent status summary
       tags:
         - Elastic Agent status
@@ -18219,6 +18575,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -18227,6 +18584,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get incoming agent data
       tags:
         - Elastic Agents
@@ -18604,6 +18962,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -18612,6 +18971,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get agents
       tags:
         - Elastic Agents
@@ -18662,6 +19022,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -18670,6 +19031,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get agents by action ids
       tags:
         - Elastic Agents
@@ -18713,6 +19075,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -18721,6 +19084,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Delete an agent
       tags:
         - Elastic Agents
@@ -19039,6 +19403,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -19047,6 +19412,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get an agent
       tags:
         - Elastic Agents
@@ -19380,6 +19746,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -19388,6 +19755,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Update an agent
       tags:
         - Elastic Agents
@@ -19517,6 +19885,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -19525,6 +19894,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Create an agent action
       tags:
         - Elastic Agent actions
@@ -19573,6 +19943,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -19581,6 +19952,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Reassign an agent
       tags:
         - Elastic Agent actions
@@ -19636,6 +20008,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -19644,6 +20017,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Request agent diagnostics
       tags:
         - Elastic Agent actions
@@ -19732,6 +20106,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -19740,6 +20115,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Upgrade an agent
       tags:
         - Elastic Agent actions
@@ -19806,6 +20182,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -19814,6 +20191,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get agent uploads
       tags:
         - Elastic Agents
@@ -19965,6 +20343,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -19973,6 +20352,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get an agent action status
       tags:
         - Elastic Agent actions
@@ -20052,6 +20432,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -20060,6 +20441,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Cancel an agent action
       tags:
         - Elastic Agent actions
@@ -20091,6 +20473,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -20099,6 +20482,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get available agent versions
       tags:
         - Elastic Agents
@@ -20158,6 +20542,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -20166,6 +20551,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Bulk reassign agents
       tags:
         - Elastic Agent actions
@@ -20225,6 +20611,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -20233,6 +20620,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Bulk request diagnostics from agents
       tags:
         - Elastic Agent actions
@@ -20297,6 +20685,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -20305,6 +20694,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Bulk unenroll agents
       tags:
         - Elastic Agent actions
@@ -20369,6 +20759,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -20377,6 +20768,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Bulk update agent tags
       tags:
         - Elastic Agent actions
@@ -20447,6 +20839,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -20455,6 +20848,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Bulk upgrade agents
       tags:
         - Elastic Agent actions
@@ -20499,6 +20893,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -20507,6 +20902,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Delete an uploaded file
       tags:
         - Elastic Agents
@@ -20540,6 +20936,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -20548,6 +20945,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get an uploaded file
       tags:
         - Elastic Agents
@@ -20602,6 +21000,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -20610,6 +21009,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get agent setup info
       tags:
         - Elastic Agents
@@ -20660,6 +21060,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -20668,6 +21069,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Initiate agent setup
       tags:
         - Elastic Agents
@@ -20710,6 +21112,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -20718,6 +21121,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get agent tags
       tags:
         - Elastic Agents
@@ -20757,6 +21161,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -20765,6 +21170,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Check permissions
       tags:
         - Fleet internals
@@ -20855,6 +21261,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -20863,6 +21270,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get data streams
       tags:
         - Data streams
@@ -20980,6 +21388,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -20988,6 +21397,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get enrollment API keys
       tags:
         - Fleet enrollment API keys
@@ -21070,6 +21480,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -21078,6 +21489,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Create an enrollment API key
       tags:
         - Fleet enrollment API keys
@@ -21121,6 +21533,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -21129,6 +21542,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Revoke an enrollment API key
       tags:
         - Fleet enrollment API keys
@@ -21189,6 +21603,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -21197,6 +21612,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get an enrollment API key
       tags:
         - Fleet enrollment API keys
@@ -21281,6 +21697,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -21289,6 +21706,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Bulk get assets
       tags:
         - Elastic Package Manager (EPM)
@@ -21346,6 +21764,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -21354,6 +21773,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get package categories
       tags:
         - Elastic Package Manager (EPM)
@@ -21430,20 +21850,22 @@ paths:
                             originId:
                               type: string
                             type:
-                              enum:
-                                - dashboard
-                                - lens
-                                - visualization
-                                - search
-                                - index-pattern
-                                - map
-                                - ml-module
-                                - security-rule
-                                - csp-rule-template
-                                - osquery-pack-asset
-                                - osquery-saved-query
-                                - tag
-                              type: string
+                              anyOf:
+                                - enum:
+                                    - dashboard
+                                    - lens
+                                    - visualization
+                                    - search
+                                    - index-pattern
+                                    - map
+                                    - ml-module
+                                    - security-rule
+                                    - csp-rule-template
+                                    - osquery-pack-asset
+                                    - osquery-saved-query
+                                    - tag
+                                  type: string
+                                - type: string
                           required:
                             - id
                             - type
@@ -21482,6 +21904,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -21490,6 +21913,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Create a custom integration
       tags:
         - Elastic Package Manager (EPM)
@@ -21558,6 +21982,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -21566,6 +21991,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get data streams
       tags:
         - Data streams
@@ -21689,20 +22115,22 @@ paths:
                                     originId:
                                       type: string
                                     type:
-                                      enum:
-                                        - dashboard
-                                        - lens
-                                        - visualization
-                                        - search
-                                        - index-pattern
-                                        - map
-                                        - ml-module
-                                        - security-rule
-                                        - csp-rule-template
-                                        - osquery-pack-asset
-                                        - osquery-saved-query
-                                        - tag
-                                      type: string
+                                      anyOf:
+                                        - enum:
+                                            - dashboard
+                                            - lens
+                                            - visualization
+                                            - search
+                                            - index-pattern
+                                            - map
+                                            - ml-module
+                                            - security-rule
+                                            - csp-rule-template
+                                            - osquery-pack-asset
+                                            - osquery-saved-query
+                                            - tag
+                                          type: string
+                                        - type: string
                                   required:
                                     - id
                                     - type
@@ -21784,20 +22212,22 @@ paths:
                                   originId:
                                     type: string
                                   type:
-                                    enum:
-                                      - dashboard
-                                      - lens
-                                      - visualization
-                                      - search
-                                      - index-pattern
-                                      - map
-                                      - ml-module
-                                      - security-rule
-                                      - csp-rule-template
-                                      - osquery-pack-asset
-                                      - osquery-saved-query
-                                      - tag
-                                    type: string
+                                    anyOf:
+                                      - enum:
+                                          - dashboard
+                                          - lens
+                                          - visualization
+                                          - search
+                                          - index-pattern
+                                          - map
+                                          - ml-module
+                                          - security-rule
+                                          - csp-rule-template
+                                          - osquery-pack-asset
+                                          - osquery-saved-query
+                                          - tag
+                                        type: string
+                                      - type: string
                                 required:
                                   - id
                                   - type
@@ -21924,11 +22354,17 @@ paths:
                         title:
                           type: string
                         type:
-                          enum:
-                            - integration
-                            - input
-                            - content
-                          type: string
+                          anyOf:
+                            - enum:
+                                - integration
+                              type: string
+                            - enum:
+                                - input
+                              type: string
+                            - enum:
+                                - content
+                              type: string
+                            - type: string
                         vars:
                           items:
                             additionalProperties: {}
@@ -21952,6 +22388,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -21960,6 +22397,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get packages
       tags:
         - Elastic Package Manager (EPM)
@@ -22020,20 +22458,22 @@ paths:
                             originId:
                               type: string
                             type:
-                              enum:
-                                - dashboard
-                                - lens
-                                - visualization
-                                - search
-                                - index-pattern
-                                - map
-                                - ml-module
-                                - security-rule
-                                - csp-rule-template
-                                - osquery-pack-asset
-                                - osquery-saved-query
-                                - tag
-                              type: string
+                              anyOf:
+                                - enum:
+                                    - dashboard
+                                    - lens
+                                    - visualization
+                                    - search
+                                    - index-pattern
+                                    - map
+                                    - ml-module
+                                    - security-rule
+                                    - csp-rule-template
+                                    - osquery-pack-asset
+                                    - osquery-saved-query
+                                    - tag
+                                  type: string
+                                - type: string
                           required:
                             - id
                             - type
@@ -22072,6 +22512,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -22080,6 +22521,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Install a package by upload
       tags:
         - Elastic Package Manager (EPM)
@@ -22162,20 +22604,22 @@ paths:
                                           originId:
                                             type: string
                                           type:
-                                            enum:
-                                              - dashboard
-                                              - lens
-                                              - visualization
-                                              - search
-                                              - index-pattern
-                                              - map
-                                              - ml-module
-                                              - security-rule
-                                              - csp-rule-template
-                                              - osquery-pack-asset
-                                              - osquery-saved-query
-                                              - tag
-                                            type: string
+                                            anyOf:
+                                              - enum:
+                                                  - dashboard
+                                                  - lens
+                                                  - visualization
+                                                  - search
+                                                  - index-pattern
+                                                  - map
+                                                  - ml-module
+                                                  - security-rule
+                                                  - csp-rule-template
+                                                  - osquery-pack-asset
+                                                  - osquery-saved-query
+                                                  - tag
+                                                type: string
+                                              - type: string
                                         required:
                                           - id
                                           - type
@@ -22248,6 +22692,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -22256,6 +22701,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Bulk install packages
       tags:
         - Elastic Package Manager (EPM)
@@ -22306,20 +22752,22 @@ paths:
                             originId:
                               type: string
                             type:
-                              enum:
-                                - dashboard
-                                - lens
-                                - visualization
-                                - search
-                                - index-pattern
-                                - map
-                                - ml-module
-                                - security-rule
-                                - csp-rule-template
-                                - osquery-pack-asset
-                                - osquery-saved-query
-                                - tag
-                              type: string
+                              anyOf:
+                                - enum:
+                                    - dashboard
+                                    - lens
+                                    - visualization
+                                    - search
+                                    - index-pattern
+                                    - map
+                                    - ml-module
+                                    - security-rule
+                                    - csp-rule-template
+                                    - osquery-pack-asset
+                                    - osquery-saved-query
+                                    - tag
+                                  type: string
+                                - type: string
                           required:
                             - id
                             - type
@@ -22357,6 +22805,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -22365,6 +22814,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Delete a package
       tags:
         - Elastic Package Manager (EPM)
@@ -22533,20 +22983,22 @@ paths:
                                   originId:
                                     type: string
                                   type:
-                                    enum:
-                                      - dashboard
-                                      - lens
-                                      - visualization
-                                      - search
-                                      - index-pattern
-                                      - map
-                                      - ml-module
-                                      - security-rule
-                                      - csp-rule-template
-                                      - osquery-pack-asset
-                                      - osquery-saved-query
-                                      - tag
-                                    type: string
+                                    anyOf:
+                                      - enum:
+                                          - dashboard
+                                          - lens
+                                          - visualization
+                                          - search
+                                          - index-pattern
+                                          - map
+                                          - ml-module
+                                          - security-rule
+                                          - csp-rule-template
+                                          - osquery-pack-asset
+                                          - osquery-saved-query
+                                          - tag
+                                        type: string
+                                      - type: string
                                 required:
                                   - id
                                   - type
@@ -22628,20 +23080,22 @@ paths:
                                 originId:
                                   type: string
                                 type:
-                                  enum:
-                                    - dashboard
-                                    - lens
-                                    - visualization
-                                    - search
-                                    - index-pattern
-                                    - map
-                                    - ml-module
-                                    - security-rule
-                                    - csp-rule-template
-                                    - osquery-pack-asset
-                                    - osquery-saved-query
-                                    - tag
-                                  type: string
+                                  anyOf:
+                                    - enum:
+                                        - dashboard
+                                        - lens
+                                        - visualization
+                                        - search
+                                        - index-pattern
+                                        - map
+                                        - ml-module
+                                        - security-rule
+                                        - csp-rule-template
+                                        - osquery-pack-asset
+                                        - osquery-saved-query
+                                        - tag
+                                      type: string
+                                    - type: string
                               required:
                                 - id
                                 - type
@@ -22794,11 +23248,17 @@ paths:
                       title:
                         type: string
                       type:
-                        enum:
-                          - integration
-                          - input
-                          - content
-                        type: string
+                        anyOf:
+                          - enum:
+                              - integration
+                            type: string
+                          - enum:
+                              - input
+                            type: string
+                          - enum:
+                              - content
+                            type: string
+                          - type: string
                       vars:
                         items:
                           additionalProperties: {}
@@ -22829,6 +23289,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -22837,6 +23298,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get a package
       tags:
         - Elastic Package Manager (EPM)
@@ -22920,20 +23382,22 @@ paths:
                             originId:
                               type: string
                             type:
-                              enum:
-                                - dashboard
-                                - lens
-                                - visualization
-                                - search
-                                - index-pattern
-                                - map
-                                - ml-module
-                                - security-rule
-                                - csp-rule-template
-                                - osquery-pack-asset
-                                - osquery-saved-query
-                                - tag
-                              type: string
+                              anyOf:
+                                - enum:
+                                    - dashboard
+                                    - lens
+                                    - visualization
+                                    - search
+                                    - index-pattern
+                                    - map
+                                    - ml-module
+                                    - security-rule
+                                    - csp-rule-template
+                                    - osquery-pack-asset
+                                    - osquery-saved-query
+                                    - tag
+                                  type: string
+                                - type: string
                           required:
                             - id
                             - type
@@ -22972,6 +23436,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -22980,6 +23445,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Install a package from the registry
       tags:
         - Elastic Package Manager (EPM)
@@ -23146,20 +23612,22 @@ paths:
                                   originId:
                                     type: string
                                   type:
-                                    enum:
-                                      - dashboard
-                                      - lens
-                                      - visualization
-                                      - search
-                                      - index-pattern
-                                      - map
-                                      - ml-module
-                                      - security-rule
-                                      - csp-rule-template
-                                      - osquery-pack-asset
-                                      - osquery-saved-query
-                                      - tag
-                                    type: string
+                                    anyOf:
+                                      - enum:
+                                          - dashboard
+                                          - lens
+                                          - visualization
+                                          - search
+                                          - index-pattern
+                                          - map
+                                          - ml-module
+                                          - security-rule
+                                          - csp-rule-template
+                                          - osquery-pack-asset
+                                          - osquery-saved-query
+                                          - tag
+                                        type: string
+                                      - type: string
                                 required:
                                   - id
                                   - type
@@ -23241,20 +23709,22 @@ paths:
                                 originId:
                                   type: string
                                 type:
-                                  enum:
-                                    - dashboard
-                                    - lens
-                                    - visualization
-                                    - search
-                                    - index-pattern
-                                    - map
-                                    - ml-module
-                                    - security-rule
-                                    - csp-rule-template
-                                    - osquery-pack-asset
-                                    - osquery-saved-query
-                                    - tag
-                                  type: string
+                                  anyOf:
+                                    - enum:
+                                        - dashboard
+                                        - lens
+                                        - visualization
+                                        - search
+                                        - index-pattern
+                                        - map
+                                        - ml-module
+                                        - security-rule
+                                        - csp-rule-template
+                                        - osquery-pack-asset
+                                        - osquery-saved-query
+                                        - tag
+                                      type: string
+                                    - type: string
                               required:
                                 - id
                                 - type
@@ -23407,11 +23877,17 @@ paths:
                       title:
                         type: string
                       type:
-                        enum:
-                          - integration
-                          - input
-                          - content
-                        type: string
+                        anyOf:
+                          - enum:
+                              - integration
+                            type: string
+                          - enum:
+                              - input
+                            type: string
+                          - enum:
+                              - content
+                            type: string
+                          - type: string
                       vars:
                         items:
                           additionalProperties: {}
@@ -23434,6 +23910,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -23442,6 +23919,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Update package settings
       tags:
         - Elastic Package Manager (EPM)
@@ -23479,6 +23957,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -23487,6 +23966,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get a package file
       tags:
         - Elastic Package Manager (EPM)
@@ -23564,6 +24044,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -23572,6 +24053,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Authorize transforms
       tags:
         - Elastic Package Manager (EPM)
@@ -23612,6 +24094,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -23620,6 +24103,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get package stats
       tags:
         - Elastic Package Manager (EPM)
@@ -23759,6 +24243,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -23767,6 +24252,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get installed packages
       tags:
         - Elastic Package Manager (EPM)
@@ -23798,6 +24284,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -23806,6 +24293,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get a limited package list
       tags:
         - Elastic Package Manager (EPM)
@@ -23899,6 +24387,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -23907,6 +24396,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get an inputs template
       tags:
         - Elastic Package Manager (EPM)
@@ -23937,6 +24427,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -23945,6 +24436,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get a package signature verification key ID
       tags:
         - Elastic Package Manager (EPM)
@@ -24011,6 +24503,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -24019,6 +24512,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get Fleet Server hosts
       tags:
         - Fleet Server hosts
@@ -24110,6 +24604,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -24118,6 +24613,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Create a Fleet Server host
       tags:
         - Fleet Server hosts
@@ -24159,6 +24655,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -24167,6 +24664,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Delete a Fleet Server host
       tags:
         - Fleet Server hosts
@@ -24226,6 +24724,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -24234,6 +24733,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get a Fleet Server host
       tags:
         - Fleet Server hosts
@@ -24323,6 +24823,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -24331,6 +24832,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Update a Fleet Server host
       tags:
         - Fleet Server hosts
@@ -24382,6 +24884,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -24390,6 +24893,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
         '404':
           content:
             application/json:
@@ -24398,6 +24902,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -24406,6 +24911,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Check Fleet Server health
       tags:
         - Fleet internals
@@ -24450,6 +24956,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -24458,6 +24965,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get a full K8s agent manifest
       tags:
         - Elastic Agent policies
@@ -24496,6 +25004,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -24504,6 +25013,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
         '404':
           content:
             application/json:
@@ -24512,6 +25022,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -24520,6 +25031,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Download an agent manifest
       tags:
         - Elastic Agent policies
@@ -24556,6 +25068,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -24564,6 +25077,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Generate a Logstash API key
       tags:
         - Fleet outputs
@@ -24606,6 +25120,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -24614,6 +25129,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
         '500':
           content:
             application/json:
@@ -24622,6 +25138,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -24630,6 +25147,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Rotate a Fleet message signing key pair
       tags:
         - Message Signing Service
@@ -24697,6 +25215,24 @@ paths:
                             proxy_id:
                               nullable: true
                               type: string
+                            secrets:
+                              additionalProperties: true
+                              type: object
+                              properties:
+                                ssl:
+                                  additionalProperties: true
+                                  type: object
+                                  properties:
+                                    key:
+                                      anyOf:
+                                        - additionalProperties: true
+                                          type: object
+                                          properties:
+                                            id:
+                                              type: string
+                                          required:
+                                            - id
+                                        - type: string
                             shipper:
                               additionalProperties: true
                               nullable: true
@@ -24848,6 +25384,20 @@ paths:
                                       required:
                                         - id
                                     - type: string
+                                ssl:
+                                  additionalProperties: true
+                                  type: object
+                                  properties:
+                                    key:
+                                      anyOf:
+                                        - additionalProperties: true
+                                          type: object
+                                          properties:
+                                            id:
+                                              type: string
+                                          required:
+                                            - id
+                                        - type: string
                             service_token:
                               nullable: true
                               type: string
@@ -25367,6 +25917,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -25375,6 +25926,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get outputs
       tags:
         - Fleet outputs
@@ -25442,6 +25994,24 @@ paths:
                     proxy_id:
                       nullable: true
                       type: string
+                    secrets:
+                      additionalProperties: false
+                      type: object
+                      properties:
+                        ssl:
+                          additionalProperties: false
+                          type: object
+                          properties:
+                            key:
+                              anyOf:
+                                - additionalProperties: false
+                                  type: object
+                                  properties:
+                                    id:
+                                      type: string
+                                  required:
+                                    - id
+                                - type: string
                     shipper:
                       additionalProperties: false
                       nullable: true
@@ -25593,6 +26163,20 @@ paths:
                               required:
                                 - id
                             - type: string
+                        ssl:
+                          additionalProperties: false
+                          type: object
+                          properties:
+                            key:
+                              anyOf:
+                                - additionalProperties: false
+                                  type: object
+                                  properties:
+                                    id:
+                                      type: string
+                                  required:
+                                    - id
+                                - type: string
                     service_token:
                       nullable: true
                       type: string
@@ -26149,6 +26733,24 @@ paths:
                           proxy_id:
                             nullable: true
                             type: string
+                          secrets:
+                            additionalProperties: true
+                            type: object
+                            properties:
+                              ssl:
+                                additionalProperties: true
+                                type: object
+                                properties:
+                                  key:
+                                    anyOf:
+                                      - additionalProperties: true
+                                        type: object
+                                        properties:
+                                          id:
+                                            type: string
+                                        required:
+                                          - id
+                                      - type: string
                           shipper:
                             additionalProperties: true
                             nullable: true
@@ -26300,6 +26902,20 @@ paths:
                                     required:
                                       - id
                                   - type: string
+                              ssl:
+                                additionalProperties: true
+                                type: object
+                                properties:
+                                  key:
+                                    anyOf:
+                                      - additionalProperties: true
+                                        type: object
+                                        properties:
+                                          id:
+                                            type: string
+                                        required:
+                                          - id
+                                      - type: string
                           service_token:
                             nullable: true
                             type: string
@@ -26809,6 +27425,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -26817,6 +27434,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Create output
       tags:
         - Fleet outputs
@@ -26858,6 +27476,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -26866,6 +27485,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
         '404':
           content:
             application/json:
@@ -26874,6 +27494,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -26882,6 +27503,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Delete output
       tags:
         - Fleet outputs
@@ -26952,6 +27574,24 @@ paths:
                           proxy_id:
                             nullable: true
                             type: string
+                          secrets:
+                            additionalProperties: true
+                            type: object
+                            properties:
+                              ssl:
+                                additionalProperties: true
+                                type: object
+                                properties:
+                                  key:
+                                    anyOf:
+                                      - additionalProperties: true
+                                        type: object
+                                        properties:
+                                          id:
+                                            type: string
+                                        required:
+                                          - id
+                                      - type: string
                           shipper:
                             additionalProperties: true
                             nullable: true
@@ -27103,6 +27743,20 @@ paths:
                                     required:
                                       - id
                                   - type: string
+                              ssl:
+                                additionalProperties: true
+                                type: object
+                                properties:
+                                  key:
+                                    anyOf:
+                                      - additionalProperties: true
+                                        type: object
+                                        properties:
+                                          id:
+                                            type: string
+                                        required:
+                                          - id
+                                      - type: string
                           service_token:
                             nullable: true
                             type: string
@@ -27612,6 +28266,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -27620,6 +28275,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get output
       tags:
         - Fleet outputs
@@ -27690,6 +28346,24 @@ paths:
                     proxy_id:
                       nullable: true
                       type: string
+                    secrets:
+                      additionalProperties: false
+                      type: object
+                      properties:
+                        ssl:
+                          additionalProperties: false
+                          type: object
+                          properties:
+                            key:
+                              anyOf:
+                                - additionalProperties: false
+                                  type: object
+                                  properties:
+                                    id:
+                                      type: string
+                                  required:
+                                    - id
+                                - type: string
                     shipper:
                       additionalProperties: false
                       nullable: true
@@ -27835,6 +28509,20 @@ paths:
                               required:
                                 - id
                             - type: string
+                        ssl:
+                          additionalProperties: false
+                          type: object
+                          properties:
+                            key:
+                              anyOf:
+                                - additionalProperties: false
+                                  type: object
+                                  properties:
+                                    id:
+                                      type: string
+                                  required:
+                                    - id
+                                - type: string
                     service_token:
                       nullable: true
                       type: string
@@ -28378,6 +29066,24 @@ paths:
                           proxy_id:
                             nullable: true
                             type: string
+                          secrets:
+                            additionalProperties: true
+                            type: object
+                            properties:
+                              ssl:
+                                additionalProperties: true
+                                type: object
+                                properties:
+                                  key:
+                                    anyOf:
+                                      - additionalProperties: true
+                                        type: object
+                                        properties:
+                                          id:
+                                            type: string
+                                        required:
+                                          - id
+                                      - type: string
                           shipper:
                             additionalProperties: true
                             nullable: true
@@ -28529,6 +29235,20 @@ paths:
                                     required:
                                       - id
                                   - type: string
+                              ssl:
+                                additionalProperties: true
+                                type: object
+                                properties:
+                                  key:
+                                    anyOf:
+                                      - additionalProperties: true
+                                        type: object
+                                        properties:
+                                          id:
+                                            type: string
+                                        required:
+                                          - id
+                                      - type: string
                           service_token:
                             nullable: true
                             type: string
@@ -29038,6 +29758,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -29046,6 +29767,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Update output
       tags:
         - Fleet outputs
@@ -29089,6 +29811,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -29097,6 +29820,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get the latest output health
       tags:
         - Fleet outputs
@@ -29164,6 +29888,12 @@ paths:
                       additionalProperties: false
                       type: object
                       properties:
+                        additional_datastreams_permissions:
+                          description: Additional datastream permissions, that will be added to the agent policy.
+                          items:
+                            type: string
+                          nullable: true
+                          type: array
                         agents:
                           type: number
                         created_at:
@@ -29555,6 +30285,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -29563,6 +30294,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get package policies
       tags:
         - Fleet package policies
@@ -29593,6 +30325,12 @@ paths:
                 - additionalProperties: false
                   type: object
                   properties:
+                    additional_datastreams_permissions:
+                      description: Additional datastream permissions, that will be added to the agent policy.
+                      items:
+                        type: string
+                      nullable: true
+                      type: array
                     description:
                       description: Package policy description
                       type: string
@@ -29824,6 +30562,12 @@ paths:
                 - additionalProperties: false
                   type: object
                   properties:
+                    additional_datastreams_permissions:
+                      description: Additional datastream permissions, that will be added to the agent policy.
+                      items:
+                        type: string
+                      nullable: true
+                      type: array
                     description:
                       type: string
                     force:
@@ -30000,6 +30744,12 @@ paths:
                     additionalProperties: false
                     type: object
                     properties:
+                      additional_datastreams_permissions:
+                        description: Additional datastream permissions, that will be added to the agent policy.
+                        items:
+                          type: string
+                        nullable: true
+                        type: array
                       agents:
                         type: number
                       created_at:
@@ -30381,6 +31131,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -30389,6 +31140,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
         '409':
           content:
             application/json:
@@ -30397,6 +31149,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -30405,6 +31158,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Create a package policy
       tags:
         - Fleet package policies
@@ -30457,6 +31211,12 @@ paths:
                       additionalProperties: false
                       type: object
                       properties:
+                        additional_datastreams_permissions:
+                          description: Additional datastream permissions, that will be added to the agent policy.
+                          items:
+                            type: string
+                          nullable: true
+                          type: array
                         agents:
                           type: number
                         created_at:
@@ -30839,6 +31599,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -30847,6 +31608,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
         '404':
           content:
             application/json:
@@ -30904,6 +31666,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -30912,6 +31675,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Delete a package policy
       tags:
         - Fleet package policies
@@ -30945,6 +31709,12 @@ paths:
                     additionalProperties: false
                     type: object
                     properties:
+                      additional_datastreams_permissions:
+                        description: Additional datastream permissions, that will be added to the agent policy.
+                        items:
+                          type: string
+                        nullable: true
+                        type: array
                       agents:
                         type: number
                       created_at:
@@ -31326,6 +32096,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -31334,6 +32105,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
         '404':
           content:
             application/json:
@@ -31381,6 +32153,12 @@ paths:
                 - additionalProperties: false
                   type: object
                   properties:
+                    additional_datastreams_permissions:
+                      description: Additional datastream permissions, that will be added to the agent policy.
+                      items:
+                        type: string
+                      nullable: true
+                      type: array
                     description:
                       description: Package policy description
                       type: string
@@ -31606,6 +32384,12 @@ paths:
                 - additionalProperties: false
                   type: object
                   properties:
+                    additional_datastreams_permissions:
+                      description: Additional datastream permissions, that will be added to the agent policy.
+                      items:
+                        type: string
+                      nullable: true
+                      type: array
                     description:
                       type: string
                     force:
@@ -31781,6 +32565,12 @@ paths:
                     additionalProperties: false
                     type: object
                     properties:
+                      additional_datastreams_permissions:
+                        description: Additional datastream permissions, that will be added to the agent policy.
+                        items:
+                          type: string
+                        nullable: true
+                        type: array
                       agents:
                         type: number
                       created_at:
@@ -32162,6 +32952,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -32170,6 +32961,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
         '403':
           content:
             application/json:
@@ -32178,6 +32970,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -32186,6 +32979,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Update a package policy
       tags:
         - Fleet package policies
@@ -32308,6 +33102,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -32316,6 +33111,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Bulk delete package policies
       tags:
         - Fleet package policies
@@ -32382,6 +33178,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -32390,6 +33187,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Upgrade a package policy
       tags:
         - Fleet package policies
@@ -32541,6 +33339,12 @@ paths:
                           - additionalProperties: false
                             type: object
                             properties:
+                              additional_datastreams_permissions:
+                                description: Additional datastream permissions, that will be added to the agent policy.
+                                items:
+                                  type: string
+                                nullable: true
+                                type: array
                               agents:
                                 type: number
                               created_at:
@@ -32914,6 +33718,12 @@ paths:
                           - additionalProperties: false
                             type: object
                             properties:
+                              additional_datastreams_permissions:
+                                description: Additional datastream permissions, that will be added to the agent policy.
+                                items:
+                                  type: string
+                                nullable: true
+                                type: array
                               description:
                                 description: Package policy description
                                 type: string
@@ -33176,6 +33986,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -33184,6 +33995,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Dry run a package policy upgrade
       tags:
         - Fleet package policies
@@ -33256,6 +34068,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -33264,6 +34077,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get proxies
       tags:
         - Fleet proxies
@@ -33367,6 +34181,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -33375,6 +34190,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Create a proxy
       tags:
         - Fleet proxies
@@ -33416,6 +34232,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -33424,6 +34241,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Delete a proxy
       tags:
         - Fleet proxies
@@ -33489,6 +34307,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -33497,6 +34316,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get a proxy
       tags:
         - Fleet proxies
@@ -33602,6 +34422,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -33610,6 +34431,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Update a proxy
       tags:
         - Fleet proxies
@@ -33660,6 +34482,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -33668,6 +34491,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Create a service token
       tags:
         - Fleet service tokens
@@ -33739,6 +34563,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -33747,6 +34572,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
         '404':
           content:
             application/json:
@@ -33866,6 +34692,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -33874,6 +34701,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
         '404':
           content:
             application/json:
@@ -33936,6 +34764,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -33944,6 +34773,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
         '500':
           content:
             application/json:
@@ -34041,6 +34871,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -34049,6 +34880,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get metadata for latest uninstall tokens
       tags:
         - Fleet uninstall tokens
@@ -34105,6 +34937,7 @@ paths:
                 description: Generic Error
                 type: object
                 properties:
+                  attributes: {}
                   error:
                     type: string
                   message:
@@ -34113,6 +34946,7 @@ paths:
                     type: number
                 required:
                   - message
+                  - attributes
       summary: Get a decrypted uninstall token
       tags:
         - Fleet uninstall tokens
@@ -37808,7 +38642,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Security_AI_Assistant_API_KnowledgeBaseEntryUpdateProps'
+              $ref: '#/components/schemas/Security_AI_Assistant_API_KnowledgeBaseEntryUpdateRouteProps'
         required: true
       responses:
         '200':
@@ -44111,6 +44945,9 @@ components:
       allOf:
         - type: object
           properties:
+            global:
+              description: Whether this Knowledge Base Entry is global, defaults to false
+              type: boolean
             name:
               description: Name of the Knowledge Base Entry
               type: string
@@ -44125,6 +44962,7 @@ components:
           required:
             - name
             - namespace
+            - global
             - users
         - $ref: '#/components/schemas/Security_AI_Assistant_API_ResponseFields'
         - $ref: '#/components/schemas/Security_AI_Assistant_API_DocumentEntryResponseFields'
@@ -44132,6 +44970,9 @@ components:
       allOf:
         - type: object
           properties:
+            global:
+              description: Whether this Knowledge Base Entry is global, defaults to false
+              type: boolean
             name:
               description: Name of the Knowledge Base Entry
               type: string
@@ -44159,8 +45000,7 @@ components:
       type: object
       properties:
         kbResource:
-          description: Knowledge Base resource name for grouping entries, e.g. 'esql', 'lens-docs', etc
-          type: string
+          $ref: '#/components/schemas/Security_AI_Assistant_API_KnowledgeBaseResource'
         source:
           description: Source document name or filepath
           type: string
@@ -44185,6 +45025,9 @@ components:
       allOf:
         - type: object
           properties:
+            global:
+              description: Whether this Knowledge Base Entry is global, defaults to false
+              type: boolean
             id:
               $ref: '#/components/schemas/Security_AI_Assistant_API_NonEmptyString'
             name:
@@ -44212,6 +45055,17 @@ components:
             query:
               description: An ESQL query
               type: string
+            timerange:
+              description: Time range to select in the time picker.
+              type: object
+              properties:
+                from:
+                  type: string
+                to:
+                  type: string
+              required:
+                - from
+                - to
             type:
               enum:
                 - EsqlQuery
@@ -44254,6 +45108,9 @@ components:
       allOf:
         - type: object
           properties:
+            global:
+              description: Whether this Knowledge Base Entry is global, defaults to false
+              type: boolean
             name:
               description: Name of the Knowledge Base Entry
               type: string
@@ -44268,6 +45125,7 @@ components:
           required:
             - name
             - namespace
+            - global
             - users
         - $ref: '#/components/schemas/Security_AI_Assistant_API_ResponseFields'
         - $ref: '#/components/schemas/Security_AI_Assistant_API_IndexEntryResponseFields'
@@ -44275,6 +45133,9 @@ components:
       allOf:
         - type: object
           properties:
+            global:
+              description: Whether this Knowledge Base Entry is global, defaults to false
+              type: boolean
             name:
               description: Name of the Knowledge Base Entry
               type: string
@@ -44334,6 +45195,9 @@ components:
       allOf:
         - type: object
           properties:
+            global:
+              description: Whether this Knowledge Base Entry is global, defaults to false
+              type: boolean
             id:
               $ref: '#/components/schemas/Security_AI_Assistant_API_NonEmptyString'
             name:
@@ -44513,6 +45377,18 @@ components:
         - $ref: '#/components/schemas/Security_AI_Assistant_API_IndexEntryUpdateFields'
       discriminator:
         propertyName: type
+    Security_AI_Assistant_API_KnowledgeBaseEntryUpdateRouteProps:
+      anyOf:
+        - $ref: '#/components/schemas/Security_AI_Assistant_API_DocumentEntryCreateFields'
+        - $ref: '#/components/schemas/Security_AI_Assistant_API_IndexEntryCreateFields'
+      discriminator:
+        propertyName: type
+    Security_AI_Assistant_API_KnowledgeBaseResource:
+      description: Knowledge Base resource name for grouping entries, e.g. 'security_labs', 'user', etc
+      enum:
+        - security_labs
+        - user
+      type: string
     Security_AI_Assistant_API_KnowledgeBaseResponse:
       description: AI assistant KnowledgeBase.
       type: object
@@ -44925,22 +45801,28 @@ components:
       type: object
       properties:
         add:
-          description: A list of users ids to assign.
           items:
-            $ref: '#/components/schemas/Security_Detections_API_NonEmptyString'
+            description: A list of users ids to assign.
+            format: nonempty
+            minLength: 1
+            type: string
           type: array
         remove:
-          description: A list of users ids to unassign.
           items:
-            $ref: '#/components/schemas/Security_Detections_API_NonEmptyString'
+            description: A list of users ids to unassign.
+            format: nonempty
+            minLength: 1
+            type: string
           type: array
       required:
         - add
         - remove
     Security_Detections_API_AlertIds:
-      description: A list of alerts ids.
+      description: A list of alerts `id`s.
       items:
-        $ref: '#/components/schemas/Security_Detections_API_NonEmptyString'
+        format: nonempty
+        minLength: 1
+        type: string
       minItems: 1
       type: array
     Security_Detections_API_AlertsIndex:
@@ -44962,6 +45844,7 @@ components:
         - additionalProperties: true
           type: object
     Security_Detections_API_AlertStatus:
+      description: The status of an alert, which can be `open`, `acknowledged`, `in-progress`, or `closed`.
       enum:
         - open
         - closed
@@ -45012,8 +45895,12 @@ components:
         - suppress
       type: string
     Security_Detections_API_AlertTag:
-      $ref: '#/components/schemas/Security_Detections_API_NonEmptyString'
+      description: Use alert tags to organize related alerts into categories that you can filter and group.
+      format: nonempty
+      minLength: 1
+      type: string
     Security_Detections_API_AlertTags:
+      description: List of keywords to organize related alerts into categories that you can filter and group.
       items:
         $ref: '#/components/schemas/Security_Detections_API_AlertTag'
       type: array
@@ -49019,8 +49906,11 @@ components:
       type: object
       properties:
         signal_ids:
+          description: List of alert `id`s.
           items:
-            $ref: '#/components/schemas/Security_Detections_API_NonEmptyString'
+            format: nonempty
+            minLength: 1
+            type: string
           minItems: 1
           type: array
         status:
@@ -49046,6 +49936,7 @@ components:
         - query
         - status
     Security_Detections_API_SetAlertTags:
+      description: Object with list of tags to add and remove.
       type: object
       properties:
         tags_to_add:
@@ -50802,9 +51693,11 @@ components:
         - microsoft_defender_endpoint
       type: string
     Security_Endpoint_Management_API_AlertIds:
-      description: A list of alerts ids.
+      description: A list of alerts `id`s.
       items:
-        $ref: '#/components/schemas/Security_Endpoint_Management_API_NonEmptyString'
+        format: nonempty
+        minLength: 1
+        type: string
       minItems: 1
       type: array
     Security_Endpoint_Management_API_CaseIds:
@@ -50862,6 +51755,92 @@ components:
         type: string
       minItems: 1
       type: array
+    Security_Endpoint_Management_API_EndpointMetadataResponse:
+      example:
+        host_status: healthy
+        last_checkin: '2023-07-04T15:48:57.360Z'
+        metadata:
+          '@timestamp': '2023-07-04T15:48:57.3609346Z'
+          agent:
+            build:
+              original: 'version: 7.16.0, compiled: Tue Nov 16 17:00:00 2021, branch: 7.16, commit: 73a51033db85e0fb3be1c934697ef6a2b08979ab'
+            id: abb8a826-6812-448c-a571-6d8269b51449
+            type: endpoint
+            version: 7.16.0
+          data_stream:
+            dataset: endpoint.metadata
+            namespace: default
+            type: metrics
+          ecs:
+            version: 1.11.0
+          elastic:
+            agent:
+              id: abb8a826-6812-448c-a571-6d8269b51449
+          Endpoint:
+            capabilities:
+              - isolation
+            configuration:
+              isolation: false
+            policy:
+              applied:
+                endpoint_policy_version: '2'
+                id: d5371dcd-93b7-4627-af88-4084f7d6aa3e
+                name: test
+                status: success
+                version: '3'
+            state:
+              isolation: false
+            status: enrolled
+          event:
+            action: endpoint_metadata
+            agent_id_status: verified
+            category:
+              - host
+            created: '2023-07-04T15:48:57.3609346Z'
+            dataset: endpoint.metadata
+            id: MNtRc++KoKHXXwlj+++++OhZ
+            ingested: '2023-07-04T15:48:58Z'
+            kind: metric
+            module: endpoint
+            sequence: 43757
+            type:
+              - info
+          host:
+            architecture: x86_64
+            hostname: WinDev2104Eval
+            id: 17d9cabc-7edd-43bc-bacb-8da5f5e6c0e5
+            ip:
+              - 10.0.2.15
+              - fe80::21a6:63d3:d70e:e3ad
+              - 127.0.0.1
+              - '::1'
+            mac:
+              - 08:00:27:b1:1d:5a
+            name: WinDev2104Eval
+            os:
+              Ext:
+                variant: Windows 10 Enterprise Evaluation
+              family: windows
+              full: Windows 10 Enterprise Evaluation 20H2 (10.0.19042.906)
+              kernel: 20H2 (10.0.19042.906)
+              name: Windows
+              platform: windows
+              type: windows
+              version: 20H2 (10.0.19042.906)
+          message: Endpoint metadata
+          policy_info:
+            agent:
+              applied:
+                id: ed7e3720-4bad-11ec-a2a8-fb22e62a5753
+                revision: 3
+              configured:
+                id: ed7e3720-4bad-11ec-a2a8-fb22e62a5753
+                revision: 3
+            endpoint:
+              id: d5371dcd-93b7-4627-af88-4084f7d6aa3e
+              revision: 2
+      type: object
+      properties: {}
     Security_Endpoint_Management_API_EntityId:
       type: object
       properties:
@@ -50989,6 +51968,20 @@ components:
           type: integer
       required:
         - hostPath
+    Security_Endpoint_Management_API_HostStatuses:
+      description: A set of agent health statuses to filter by.
+      example:
+        - healthy
+        - updating
+      items:
+        enum:
+          - healthy
+          - offline
+          - updating
+          - inactive
+          - unenrolled
+        type: string
+      type: array
     Security_Endpoint_Management_API_IsolateRouteRequestBody:
       type: object
       properties:
@@ -51038,61 +52031,195 @@ components:
                       type: string
           required:
             - parameters
-    Security_Endpoint_Management_API_ListRequestQuery:
-      type: object
-      properties:
-        hostStatuses:
-          items:
-            enum:
-              - healthy
-              - offline
-              - updating
-              - inactive
-              - unenrolled
-            type: string
-          type: array
-        kuery:
-          nullable: true
-          type: string
-        page:
-          default: 0
-          description: Page number
-          minimum: 0
-          type: integer
-        pageSize:
-          default: 10
-          description: Number of items per page
-          maximum: 10000
-          minimum: 1
-          type: integer
-        sortDirection:
-          enum:
-            - asc
-            - desc
-          nullable: true
-          type: string
-        sortField:
-          enum:
-            - enrolled_at
-            - metadata.host.hostname
-            - host_status
-            - metadata.Endpoint.policy.applied.name
-            - metadata.Endpoint.policy.applied.status
-            - metadata.host.os.name
-            - metadata.host.ip
-            - metadata.agent.version
-            - last_checkin
-          type: string
-      required:
-        - hostStatuses
-    Security_Endpoint_Management_API_NonEmptyString:
-      description: A string that does not contain only whitespace characters
-      format: nonempty
-      minLength: 1
+    Security_Endpoint_Management_API_Kuery:
+      description: A KQL string.
+      example: 'united.endpoint.host.os.name : ''Windows'''
       type: string
+    Security_Endpoint_Management_API_MetadataListResponse:
+      example:
+        data:
+          - host_status: healthy
+            last_checkin: '2023-07-04T15:47:57.432Z'
+            metadata:
+              '@timestamp': '2023-07-04T15:47:57.432173535Z'
+              agent:
+                build:
+                  original: 'version: 7.16.0, compiled: Tue Nov 16 16:00:00 2021, branch: 7.16, commit: 73a51033db85e0fb3be1c934697ef6a2b08979ab'
+                id: 285297c6-3bff-4b83-9a07-f3e749801123
+                type: endpoint
+                version: 7.16.0
+              data_stream:
+                dataset: endpoint.metadata
+                namespace: default
+                type: metrics
+              ecs:
+                version: 1.11.0
+              elastic:
+                agent:
+                  id: 285297c6-3bff-4b83-9a07-f3e749801123
+              Endpoint:
+                capabilities:
+                  - isolation
+                configuration:
+                  isolation: false
+                policy:
+                  applied:
+                    endpoint_policy_version: '2'
+                    id: d5371dcd-93b7-4627-af88-4084f7d6aa3e
+                    name: test
+                    status: success
+                    version: '3'
+                state:
+                  isolation: false
+                status: enrolled
+              event:
+                action: endpoint_metadata
+                agent_id_status: verified
+                category:
+                  - host
+                created: '2023-07-04T15:47:57.432173535Z'
+                dataset: endpoint.metadata
+                id: MNtSXK/SkhEBnmgt++++++7S
+                ingested: '2023-07-04T15:47:58Z'
+                kind: metric
+                module: endpoint
+                sequence: 400
+                type:
+                  - info
+              host:
+                architecture: x86_64
+                hostname: david-Xubuntu
+                id: 0cfead88e2024bd8a27476352b5ab264
+                ip:
+                  - 127.0.0.1
+                  - '::1'
+                  - 10.0.2.15
+                  - fe80::2ac7:8e15:b957:2fa1
+                mac:
+                  - 08:00:27:e6:78:8b
+                name: david-Xubuntu
+                os:
+                  Ext:
+                    variant: Ubuntu
+                  family: ubuntu
+                  full: Ubuntu 20.04.2
+                  kernel: '5.8.0-59-generic #66~20.04.1-Ubuntu SMP Thu Jun 17 11:14:10 UTC 2021'
+                  name: Linux
+                  platform: ubuntu
+                  type: linux
+                  version: 20.04.2
+              message: Endpoint metadata
+            policy_info:
+              agent:
+                applied:
+                  id: ed7e3720-4bad-11ec-a2a8-fb22e62a5753
+                  revision: 0
+                configured:
+                  id: ed7e3720-4bad-11ec-a2a8-fb22e62a5753
+                  revision: 3
+              endpoint:
+                id: d5371dcd-93b7-4627-af88-4084f7d6aa3e
+                revision: 2
+          - host_status: healthy
+            last_checkin: '2023-07-04T15:44:31.491Z'
+            metadata:
+              '@timestamp': '2023-07-04T15:44:31.4917849Z'
+              agent:
+                build:
+                  original: 'version: 7.16.0, compiled: Tue Nov 16 17:00:00 2021, branch: 7.16, commit: 73a51033db85e0fb3be1c934697ef6a2b08979ab'
+                id: abb8a826-6812-448c-a571-6d8269b51449
+                type: endpoint
+                version: 7.16.0
+              data_stream:
+                dataset: endpoint.metadata
+                namespace: default
+                type: metrics
+              ecs:
+                version: 1.11.0
+              elastic:
+                agent:
+                  id: abb8a826-6812-448c-a571-6d8269b51449
+              Endpoint:
+                capabilities:
+                  - isolation
+                configuration:
+                  isolation: false
+                policy:
+                  applied:
+                    endpoint_policy_version: '2'
+                    id: d5371dcd-93b7-4627-af88-4084f7d6aa3e
+                    name: test
+                    status: success
+                    version: '3'
+                state:
+                  isolation: false
+                status: enrolled
+              event:
+                action: endpoint_metadata
+                agent_id_status: verified
+                category:
+                  - host
+                created: '2023-07-04T15:44:31.4917849Z'
+                dataset: endpoint.metadata
+                id: MNtRc++KoKHXXwlj+++++/N9
+                ingested: '2023-07-04T15:44:33Z'
+                kind: metric
+                module: endpoint
+                sequence: 5159
+                type:
+                  - info
+              host:
+                architecture: x86_64
+                hostname: WinDev2104Eval
+                id: 17d9cabc-7edd-43bc-bacb-8da5f5e6c0e5
+                ip:
+                  - 10.0.2.15
+                  - fe80::21a6:63d3:d70e:e3ad
+                  - 127.0.0.1
+                  - '::1'
+                mac:
+                  - 08:00:27:b1:1d:5a
+                name: WinDev2104Eval
+                os:
+                  Ext:
+                    variant: Windows 10 Enterprise Evaluation
+                  family: windows
+                  full: Windows 10 Enterprise Evaluation 20H2 (10.0.19042.906)
+                  kernel: 20H2 (10.0.19042.906)
+                  name: Windows
+                  platform: windows
+                  type: windows
+                  version: 20H2 (10.0.19042.906)
+              message: Endpoint metadata
+            policy_info:
+              agent:
+                applied:
+                  id: ed7e3720-4bad-11ec-a2a8-fb22e62a5753
+                  revision: 0
+                configured:
+                  id: ed7e3720-4bad-11ec-a2a8-fb22e62a5753
+                  revision: 3
+              endpoint:
+                id: d5371dcd-93b7-4627-af88-4084f7d6aa3e
+                revision: 2
+        page: 0
+        pageSize: 10
+        sortDirection: desc
+        sortField: enrolled_at
+        total: 2
+      type: object
+      properties: {}
     Security_Endpoint_Management_API_Page:
       default: 1
       description: Page number
+      example: 1
+      minimum: 1
+      type: integer
+    Security_Endpoint_Management_API_PageSize:
+      default: 10
+      description: Number of items per page
+      example: 10
+      maximum: 100
       minimum: 1
       type: integer
     Security_Endpoint_Management_API_Parameters:
@@ -51192,6 +52319,27 @@ components:
                 - path
           required:
             - parameters
+    Security_Endpoint_Management_API_SortDirection:
+      description: Determines the sort order.
+      enum:
+        - asc
+        - desc
+      example: desc
+      type: string
+    Security_Endpoint_Management_API_SortField:
+      description: Determines which field is used to sort the results.
+      enum:
+        - enrolled_at
+        - metadata.host.hostname
+        - host_status
+        - metadata.Endpoint.policy.applied.name
+        - metadata.Endpoint.policy.applied.status
+        - metadata.host.os.name
+        - metadata.host.ip
+        - metadata.agent.version
+        - last_checkin
+      example: enrolled_at
+      type: string
     Security_Endpoint_Management_API_StartDate:
       description: Start date
       type: string
@@ -51340,6 +52488,15 @@ components:
         - medium_impact
         - high_impact
         - extreme_impact
+      type: string
+    Security_Entity_Analytics_API_AssetCriticalityLevelsForBulkUpload:
+      description: The criticality level of the asset for bulk upload. The value `unassigned` is used to indicate that the criticality level is not assigned and is only used for bulk upload.
+      enum:
+        - low_impact
+        - medium_impact
+        - high_impact
+        - extreme_impact
+        - unassigned
       type: string
     Security_Entity_Analytics_API_AssetCriticalityRecord:
       allOf:
@@ -51518,6 +52675,8 @@ components:
           type: string
         installed:
           type: boolean
+        metadata:
+          $ref: '#/components/schemas/Security_Entity_Analytics_API_Metadata'
         resource:
           $ref: '#/components/schemas/Security_Entity_Analytics_API_EngineComponentResource'
       required:
@@ -51673,7 +52832,6 @@ components:
         - user
         - host
         - service
-        - universal
       type: string
     Security_Entity_Analytics_API_HostEntity:
       type: object
@@ -51749,7 +52907,6 @@ components:
         - host.name
         - user.name
         - service.name
-        - related.entity
       type: string
     Security_Entity_Analytics_API_IndexPattern:
       type: string
@@ -51772,6 +52929,8 @@ components:
       example: 1h
       pattern: ^[1-9]\d*[smh]$
       type: string
+    Security_Entity_Analytics_API_Metadata:
+      $ref: '#/components/schemas/Security_Entity_Analytics_API_TransformStatsMetadata'
     Security_Entity_Analytics_API_RiskEngineScheduleNowErrorResponse:
       type: object
       properties:
@@ -51886,6 +53045,59 @@ components:
       required:
         - status_code
         - message
+    Security_Entity_Analytics_API_TransformStatsMetadata:
+      type: object
+      properties:
+        delete_time_in_ms:
+          type: integer
+        documents_deleted:
+          type: integer
+        documents_indexed:
+          type: integer
+        documents_processed:
+          type: integer
+        exponential_avg_checkpoint_duration_ms:
+          type: integer
+        exponential_avg_documents_indexed:
+          type: integer
+        exponential_avg_documents_processed:
+          type: integer
+        index_failures:
+          type: integer
+        index_time_in_ms:
+          type: integer
+        index_total:
+          type: integer
+        pages_processed:
+          type: integer
+        processing_time_in_ms:
+          type: integer
+        processing_total:
+          type: integer
+        search_failures:
+          type: integer
+        search_time_in_ms:
+          type: integer
+        search_total:
+          type: integer
+        trigger_count:
+          type: integer
+      required:
+        - pages_processed
+        - documents_processed
+        - documents_indexed
+        - trigger_count
+        - index_time_in_ms
+        - index_total
+        - index_failures
+        - search_time_in_ms
+        - search_total
+        - search_failures
+        - processing_time_in_ms
+        - processing_total
+        - exponential_avg_checkpoint_duration_ms
+        - exponential_avg_documents_indexed
+        - exponential_avg_documents_processed
     Security_Entity_Analytics_API_UserEntity:
       type: object
       properties:
